@@ -184,6 +184,25 @@
     return [self fd_systemFittingHeightForConfiguratedCell:templateLayoutCell];
 }
 
+- (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier calculate:(CGFloat (^)(id cell))calculate {
+    if (!identifier) {
+        return 0;
+    }
+    
+    UITableViewCell *templateLayoutCell = [self fd_templateCellForReuseIdentifier:identifier];
+    
+    // Manually calls to ensure consistent behavior with actual cells. (that are displayed on screen)
+    [templateLayoutCell prepareForReuse];
+    
+    // Customize and provide content for our template cell.
+    if (calculate) {
+      return  calculate(templateLayoutCell);
+    }
+  
+    return  0;
+//    return [self fd_systemFittingHeightForConfiguratedCell:templateLayoutCell];
+}
+
 - (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier cacheByIndexPath:(NSIndexPath *)indexPath configuration:(void (^)(id cell))configuration {
     if (!identifier || !indexPath) {
         return 0;
@@ -220,6 +239,27 @@
     
     return height;
 }
+
+- (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier cacheByKey:(id<NSCopying>)key calculate:(CGFloat (^)(id cell))calculate {
+    if (!identifier || !key) {
+        return 0;
+    }
+    
+    // Hit cache
+    if ([self.fd_keyedHeightCache existsHeightForKey:key]) {
+        CGFloat cachedHeight = [self.fd_keyedHeightCache heightForKey:key];
+        [self fd_debugLog:[NSString stringWithFormat:@"hit cache by key[%@] - %@", key, @(cachedHeight)]];
+        return cachedHeight;
+    }
+    
+    CGFloat height = [self fd_heightForCellWithIdentifier:identifier calculate:calculate];
+    [self.fd_keyedHeightCache cacheHeight:height byKey:key];
+    [self fd_debugLog:[NSString stringWithFormat:@"cached by key[%@] - %@", key, @(height)]];
+    
+    return height;
+}
+
+
 
 @end
 
