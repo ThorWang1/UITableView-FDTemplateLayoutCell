@@ -183,7 +183,7 @@
     
     return [self fd_systemFittingHeightForConfiguratedCell:templateLayoutCell];
 }
-
+/*
 - (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier calculate:(CGFloat (^)(id cell))calculate {
     if (!identifier) {
         return 0;
@@ -202,6 +202,15 @@
     return  0;
 //    return [self fd_systemFittingHeightForConfiguratedCell:templateLayoutCell];
 }
+*/
+
+- (CGFloat)fd_heightForCellWithCalculate:(CGFloat (^)())calculate {
+    if (calculate) {
+      return  calculate();
+    }
+    return  0;
+}
+
 
 - (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier cacheByIndexPath:(NSIndexPath *)indexPath configuration:(void (^)(id cell))configuration {
     if (!identifier || !indexPath) {
@@ -239,7 +248,7 @@
     
     return height;
 }
-
+/*
 - (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier cacheByKey:(id<NSCopying>)key calculate:(CGFloat (^)(id cell))calculate {
     if (!identifier || !key) {
         return 0;
@@ -258,7 +267,35 @@
     
     return height;
 }
+*/
+- (CGFloat)fd_heightForCellWithCacheByKey:(id<NSCopying>)key calculate:(CGFloat (^)(void))calculate {
+    if ( !key) {
+        return 0;
+    }
+    
+    // Hit cache
+    if ([self.fd_keyedHeightCache existsHeightForKey:key]) {
+        CGFloat cachedHeight = [self.fd_keyedHeightCache heightForKey:key];
+        [self fd_debugLog:[NSString stringWithFormat:@"hit cache by key[%@] - %@", key, @(cachedHeight)]];
+        return cachedHeight;
+    }
+    
+    CGFloat height = [self fd_heightForCellWithCalculate:calculate];
+    [self.fd_keyedHeightCache cacheHeight:height byKey:key];
+    [self fd_debugLog:[NSString stringWithFormat:@"cached by key[%@] - %@", key, @(height)]];
+    
+    return height;
+}
 
+- (BOOL)fd_precacheEnabled
+{
+    return [objc_getAssociatedObject(self, _cmd) boolValue];
+}
+
+- (void)setFd_precacheEnabled:(BOOL)precacheEnabled
+{
+    objc_setAssociatedObject(self, @selector(fd_precacheEnabled), @(precacheEnabled), OBJC_ASSOCIATION_RETAIN);
+}
 
 
 @end

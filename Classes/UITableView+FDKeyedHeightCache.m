@@ -70,6 +70,18 @@
     [self.mutableHeightsByKeyForLandscape removeAllObjects];
 }
 
+-(void)invalidateHeightCacheForKeyContains:(NSString *)subString{
+  
+  for ( id<NSCopying> key in self.mutableHeightsByKeyForPortrait.allKeys){
+    if ([(NSObject * )key isKindOfClass:[NSString class] ]){
+      NSString * k = (NSString * )key;
+      if ([k containsString:subString] ){
+        [self invalidateHeightForKey:k];
+      }
+    }
+  }
+}
+
 @end
 
 @implementation UITableView (FDKeyedHeightCache)

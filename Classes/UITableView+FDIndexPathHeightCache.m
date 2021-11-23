@@ -21,6 +21,8 @@
 // SOFTWARE.
 
 #import "UITableView+FDIndexPathHeightCache.h"
+#import "UITableView+FDTemplateLayoutCellDebug.h"
+#import "UITableView+FDTemplateLayoutCell.h"
 #import <objc/runtime.h>
 
 typedef NSMutableArray<NSMutableArray<NSNumber *> *> FDIndexPathHeightsBySection;
@@ -172,7 +174,102 @@ static void __FD_TEMPLATE_LAYOUT_CELL_PRIMARY_CALL_IF_CRASH_NOT_OUR_BUG__(void (
             [heightsBySection removeAllObjects];
         }];
     }
-    FDPrimaryCall([self fd_reloadData];);
+  FDPrimaryCall([self fd_reloadData];[self fd_precacheIfNeeded];);
+ 
+}
+
+- (NSArray *)fd_allIndexPathsToBePrecached
+{
+    NSMutableArray *allIndexPaths = @[].mutableCopy;
+    for (NSInteger section = 0; section < [self numberOfSections]; ++section) {
+        for (NSInteger row = 0; row < [self numberOfRowsInSection:section]; ++row) {
+            NSIndexPath *indexPath = [NSIndexPath indexPathForRow:row inSection:section];
+          if (![self.fd_indexPathHeightCache existsHeightAtIndexPath:indexPath]) {
+                            [allIndexPaths addObject:indexPath];
+          }
+          
+//            if (![self.fd_cellHeightCache hasCachedHeightAtIndexPath:indexPath]) {
+//                [allIndexPaths addObject:indexPath];
+//            }
+        }
+    }
+    return allIndexPaths.copy;
+}
+-(void)fd_precacheIfNeeded{
+  if (!self.fd_precacheEnabled) {
+      return;
+  }
+  
+  // Delegate could use "rowHeight" rather than implements this method.
+  if (![self.delegate respondsToSelector:@selector(tableView:heightForRowAtIndexPath:)]) {
+      return;
+  }
+  
+  CFRunLoopRef runLoop = CFRunLoopGetCurrent();
+  
+  // This is a idle mode of RunLoop, when UIScrollView scrolls, it jumps into "UITrackingRunLoopMode"
+  // and won't perform any cache task to keep a smooth scroll.
+  CFStringRef runLoopMode = kCFRunLoopDefaultMode;
+  
+  // Collect all index paths to be precached.
+  NSMutableArray *mutableIndexPathsToBePrecached = self.fd_allIndexPathsToBePrecached.mutableCopy;
+  
+  // Setup a observer to get a perfect moment for precaching tasks.
+  // We use a "kCFRunLoopBeforeWaiting" state to keep RunLoop has done everything and about to sleep
+  // (mach_msg_trap), when all tasks finish, it will remove itself.
+  CFRunLoopObserverRef observer = CFRunLoopObserverCreateWithHandler
+  (kCFAllocatorDefault, kCFRunLoopBeforeWaiting, true, 0, ^(CFRunLoopObserverRef observer, CFRunLoopActivity _) {
+      // Remove observer when all precache tasks are done.
+      if (mutableIndexPathsToBePrecached.count == 0) {
+          CFRunLoopRemoveObserver(runLoop, observer, runLoopMode);
+          CFRelease(observer);
+          return;
+      }
+      // Pop first index path record as this RunLoop iteration's task.
+      NSIndexPath *indexPath = mutableIndexPathsToBePrecached.firstObject;
+      [mutableIndexPathsToBePrecached removeObject:indexPath];
+      
+      // This method creates a "source 0" task in "idle" mode of RunLoop, and will be
+      // performed in a future RunLoop iteration only when user is not scrolling.
+      [self performSelector:@selector(fd_precacheIndexPathIfNeeded:)
+                   onThread:[NSThread mainThread]
+                 withObject:indexPath
+              waitUntilDone:NO
+                      modes:@[NSDefaultRunLoopMode]];
+  });
+  
+  CFRunLoopAddObserver(runLoop, observer, runLoopMode);
+}
+
+- (void)fd_precacheIndexPathIfNeeded:(NSIndexPath *)indexPath
+{
+    // A cached indexPath
+//    if ([self.fd_cellHeightCache hasCachedHeightAtIndexPath:indexPath]) {
+//        return;
+//    }
+  
+    if ([self.fd_indexPathHeightCache existsHeightAtIndexPath:indexPath]) {
+      return;
+    }
+
+    // This RunLoop source may have been invalid at this point when data source
+    // changes during precache's dispatching.
+    if (indexPath.section >= [self numberOfSections] ||
+        indexPath.row >= [self numberOfRowsInSection:indexPath.section]) {
+        return;
+    }
+    
+    CGFloat height = [self.delegate tableView:self heightForRowAtIndexPath:indexPath];
+//    [self.fd_cellHeightCache cacheHeight:height byIndexPath:indexPath];
+  
+    [self.fd_indexPathHeightCache cacheHeight:height byIndexPath:indexPath];
+  
+    [self fd_debugLog:[NSString stringWithFormat: @"finished precache by index path[%@:%@] - %@", @(indexPath.section), @(indexPath.row), @(height)]];
+//    [self fd_debugLog:[NSString stringWithFormat:
+//                       @"finished precache - [%@:%@] %@",
+//                       @(indexPath.section),
+//                       @(indexPath.row),
+//                       @(height)]];
 }
 
 - (void)fd_insertSections:(NSIndexSet *)sections withRowAnimation:(UITableViewRowAnimation)animation {

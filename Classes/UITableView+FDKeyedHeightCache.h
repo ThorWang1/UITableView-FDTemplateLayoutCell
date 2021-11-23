@@ -30,6 +30,9 @@
 
 // Invalidation
 - (void)invalidateHeightForKey:(id<NSCopying>)key;
+/// 清除包含某一字符串的所有key的缓存
+- (void)invalidateHeightCacheForKeyContains:(NSString *)subString;
+
 - (void)invalidateAllHeightCache;
 @end
 

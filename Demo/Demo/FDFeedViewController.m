@@ -29,7 +29,7 @@ typedef NS_ENUM(NSInteger, FDSimulatedCacheMode) {
     [super viewDidLoad];
    
     self.tableView.fd_debugLogEnabled = YES;
-    
+//  [self.tableView setPrefetchingEnabled:YES];
     // Cache by index path initial
     self.cacheModeSegmentControl.selectedSegmentIndex = 1;
     

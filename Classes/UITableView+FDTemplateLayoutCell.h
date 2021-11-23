@@ -73,10 +73,12 @@
 ///
 /// @param key model entity's identifier whose data configures a cell.
 ///
-- (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier cacheByKey:(id<NSCopying>)key configuration:(void (^)(id cell))configuration;
 
+/// 调用者提供高度的计算函数
+-(CGFloat)fd_heightForCellWithCacheByKey:(id<NSCopying>)key calculate:(CGFloat (^)(void))calculate ;
 
-- (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier cacheByKey:(id<NSCopying>)key calculate:(CGFloat (^)(id cell))calculate;
+/// 是否开启预计算cell高度
+@property (nonatomic, assign) BOOL fd_precacheEnabled;
 
 
 @end
