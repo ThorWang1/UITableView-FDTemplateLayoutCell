@@ -50,11 +50,6 @@
 ///
 - (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier configuration:(void (^)(id cell))configuration;
 
-
-//- (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier calculate:(CGFloat (^)(id cell))calculate;
-
-
-
 /// This method does what "-fd_heightForCellWithIdentifier:configuration" does, and
 /// calculated height will be cached by its index path, returns a cached height
 /// when needed. Therefore lots of extra height calculations could be saved.
@@ -73,6 +68,7 @@
 ///
 /// @param key model entity's identifier whose data configures a cell.
 ///
+- (CGFloat)fd_heightForCellWithIdentifier:(NSString *)identifier cacheByKey:(id<NSCopying>)key configuration:(void (^)(id cell))configuration;
 
 /// 调用者提供高度的计算函数
 -(CGFloat)fd_heightForCellWithCacheByKey:(id<NSCopying>)key calculate:(CGFloat (^)(void))calculate ;
