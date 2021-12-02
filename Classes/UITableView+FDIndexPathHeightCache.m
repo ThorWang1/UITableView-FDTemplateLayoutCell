@@ -174,7 +174,8 @@ static void __FD_TEMPLATE_LAYOUT_CELL_PRIMARY_CALL_IF_CRASH_NOT_OUR_BUG__(void (
             [heightsBySection removeAllObjects];
         }];
     }
-  FDPrimaryCall([self fd_reloadData];[self fd_precacheIfNeeded];);
+    [self.fd_keyedHeightCache invalidateAllHeightCache];
+    FDPrimaryCall([self fd_reloadData];[self fd_precacheIfNeeded];);
  
 }
 
