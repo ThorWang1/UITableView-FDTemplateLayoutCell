@@ -73,6 +73,10 @@
 /// 调用者提供高度的计算函数
 -(CGFloat)fd_heightForCellWithCacheByKey:(id<NSCopying>)key calculate:(CGFloat (^)(void))calculate ;
 
+/// 调用者提供高度的计算函数
+-(CGFloat)fd_heightForCellWithCacheByIndexPath:(NSIndexPath *)indexPath calculate:(CGFloat (^)(void))calculate ;
+
+
 /// 是否开启预计算cell高度
 @property (nonatomic, assign) BOOL fd_precacheEnabled;
 

@@ -204,7 +204,7 @@
 }
 */
 
-- (CGFloat)fd_heightForCellWithCalculate:(CGFloat (^)())calculate {
+- (CGFloat)fd_heightForCellWithCalculate:(CGFloat (^)(void))calculate {
     if (calculate) {
       return  calculate();
     }
@@ -286,6 +286,25 @@
     
     return height;
 }
+
+- (CGFloat)fd_heightForCellWithCacheByIndexPath:(NSIndexPath *)indexPath calculate:(CGFloat (^)(void))calculate {
+    if ( !indexPath) {
+        return 0;
+    }
+    
+    // Hit cache
+    if ([self.fd_indexPathHeightCache existsHeightAtIndexPath:indexPath]) {
+        [self fd_debugLog:[NSString stringWithFormat:@"hit cache by index path[%@:%@] - %@", @(indexPath.section), @(indexPath.row), @([self.fd_indexPathHeightCache heightForIndexPath:indexPath])]];
+        return [self.fd_indexPathHeightCache heightForIndexPath:indexPath];
+    }
+    
+    CGFloat height = [self fd_heightForCellWithCalculate:calculate];
+    [self.fd_indexPathHeightCache cacheHeight:height byIndexPath:indexPath];
+    [self fd_debugLog:[NSString stringWithFormat: @"cached by index path[%@:%@] - %@", @(indexPath.section), @(indexPath.row), @(height)]];
+    
+    return height;
+}
+
 
 - (BOOL)fd_precacheEnabled
 {
